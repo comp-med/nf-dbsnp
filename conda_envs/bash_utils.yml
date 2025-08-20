@@ -1,0 +1,8 @@
+name: bcftools
+channels:
+  - nodefaults
+  - conda-forge
+  - bioconda
+dependencies:
+  - awk
+  - bcftools

@@ -1,0 +1,218 @@
+process DOWNLOAD_ASSEMBLY_REPORT {
+
+  tag "assembly_report: $genome_build"
+  label 'bash_process'
+  conda 'conda_envs/bash_utils.yml'
+
+  input: 
+  val genome_build
+
+  output:
+  tuple val(genome_build), file("*.txt")
+
+  script:
+  """
+  GENOME_BUILD="$genome_build"
+  NCBI_FTP="https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/405"
+
+  if [[ "\$GENOME_BUILD" == "grch37p13" ]]; then
+    LINK="\${NCBI_FTP}/GCF_000001405.25_GRCh37.p13/GCF_000001405.25_GRCh37.p13_assembly_report.txt"
+  elif [[ "\$GENOME_BUILD" == "grch38p14" ]]; then 
+    LINK="\${NCBI_FTP}/GCF_000001405.40_GRCh38.p14/GCF_000001405.40_GRCh38.p14_assembly_report.txt"
+  fi
+  wget \$LINK
+  """
+
+  stub:
+  """
+  GENOME_BUILD="$genome_build"
+  if [[ "\$GENOME_BUILD" == "grch37p13" ]]; then
+    touch GCF_000001405.25_GRCh37.p13_assembly_report.txt
+  elif [[ "\$GENOME_BUILD" == "grch38p14" ]]; then 
+    touch GCF_000001405.40_GRCh38.p14_assembly_report.txt
+  fi
+  """
+}
+
+process DOWNLOAD_DBSNP {
+  // TODO: compare checksum to make sure download was complete
+  
+  tag "dbsnp: $genome_build"
+  label 'bash_process'
+  cache 'lenient'
+  conda 'conda_envs/bash_utils.yml'
+
+  input: val genome_build
+
+  output:
+  tuple val(genome_build), file("*.gz")
+
+  script:
+  """
+  GENOME_BUILD="$genome_build"
+  NCBI_FTP="https://ftp.ncbi.nih.gov/snp/latest_release/VCF/"
+
+  if [[ "\$GENOME_BUILD" == "grch37p13" ]]; then
+
+    LINK="\${NCBI_FTP}/GCF_000001405.25.gz"
+
+  elif [[ "\$GENOME_BUILD" == "grch38p14" ]]; then 
+
+    LINK="\${NCBI_FTP}/GCF_000001405.40.gz"
+
+  fi
+  wget \$LINK
+  """
+
+  stub:
+  """
+  GENOME_BUILD="$genome_build"
+  if [[ "\$GENOME_BUILD" == "grch37p13" ]]; then
+
+    touch GCF_000001405.25.gz 
+
+  elif [[ "\$GENOME_BUILD" == "grch38p14" ]]; then 
+
+    touch GCF_000001405.40.gz
+
+  fi
+  """
+
+}
+
+process CHROM_MAP {
+
+  tag "chrom_map: $genome_build"
+  label 'bash_process'
+  conda 'conda_envs/bash_utils.yml'
+
+  input:
+  tuple val(genome_build), path(raw_dbsnp), path(assembly_report)
+  
+  output: 
+  tuple val(genome_build), path(raw_dbsnp), path("full_chromosome_map.tsv")
+
+  script:
+  """
+  IN="$assembly_report"
+  OUT="full_chromosome_map.tsv"
+  awk -F '\t' '!/^#/{print \$7, \$10}' \$IN > \$OUT
+  """
+  
+  stub:
+  """
+  touch full_chromosome_map.tsv
+  """
+}
+
+process RENAME_CHROMS {
+  // Change chromosome style from Ensembl to UCSC
+
+  tag "rename_chroms: $genome_build"
+  label 'bash_process'
+  conda 'conda_envs/bcftools.yml'
+
+  input:
+  tuple val(genome_build), path(raw_dbsnp), path(chromosome_map)
+  
+  output: 
+  tuple val(genome_build), path("dbsnp.vcf.gz")
+
+  script:
+  """
+  BUILD="$genome_build"
+  MAP="$chromosome_map"
+  IN="$raw_dbsnp"
+  OUT="dbsnp.vcf.gz"
+  bcftools annotate --rename-chrs \$MAP -Oz -o \$OUT \$IN
+  """
+  
+  stub:
+  """
+  touch dbsnp.vcf.gz
+  """
+}
+
+process FILTER_CHROMS {
+  // Only keep default chromosomes 1-22, X, Y
+
+  tag "filter_chroms: $genome_build"
+  label 'bash_process'
+  conda 'conda_envs/bcftools.yml'
+
+  input:
+  tuple val(genome_build), path(dbsnp)
+  
+  output: 
+  tuple val(genome_build), path("default_dbsnp.vcf.gz")
+
+  script:
+  // TODO: make this shorter, use `chr{1..2}`?
+  """
+  REGIONS='chr1,chr2,chr3,chr4,chr5,chr6,chr7,chr8,chr9,chr10,chr11,chr12,chr13,chr14,chr15,chr16,chr17,chr18,chr19,chr20,chr21,chr22,chrX,chrY'
+  IN="$dbsnp"
+  OUT="default_dbsnp.vcf.gz"
+  bcftools view --regions \$REGIONS --write-index -Oz -o \$OUT \$IN
+  """
+  
+  stub:
+  """
+  touch default_dbsnp.vcf.gz
+  """
+}
+
+process CREATE_TSV {
+  // Create a gzipped TSV from the VCF file
+
+  tag "create_tsv: $genome_build"
+  label 'bash_process'
+  conda 'conda_envs/bcftools.yml'
+
+  input:
+  tuple val(genome_build), path(dbsnp)
+  
+  output: 
+  tuple val(genome_build), path("dbsnp.tsv.gz")
+  
+  script:
+  """
+  IN="$dbsnp"
+  OUT="dbsnp.tsv.gz"
+  bcftools norm -m- --no-version -Ou \$IN | \
+  bcftools query \
+    -f '%CHROM\t%POS\t%ID\t%REF\t%ALT\n' \
+    -o \$OUT
+  bgzip \$OUT
+  rm \$OUT
+  """
+
+  stub:
+  """
+  touch dbsnp.tsv.gz
+  """
+}
+
+process PARTITION_DBSNP {
+  // Split up the TSV into per-chromosome chunks and save as parquet
+
+  tag "create_chunks: $genome_build"
+  label 'r_process'
+  publish // TODO
+
+  input:
+  tuple val(genome_build), path(dbsnp), val(chromosome)
+
+  output:
+  tuple val(genome_build), val(chromosome), path("dbsnp.parquet")
+
+  script:
+  """
+  #! /usr/bin/env Rscript
+
+  """
+
+  stub:
+  """
+  touch dbsnp.parquet
+  """
+}

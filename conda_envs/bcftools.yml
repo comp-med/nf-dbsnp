@@ -1,0 +1,7 @@
+name: bash_utils
+channels:
+  - conda-forge
+  - nodefaults
+dependencies:
+  - wget
+  - awk

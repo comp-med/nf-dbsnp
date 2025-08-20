@@ -7,7 +7,7 @@ nextflow.enable.dsl=2
 
 log.info """\
 ===============================================================================
-Pipeline Name
+Download and Process the latest dbSNP release
 ===============================================================================
 
 Created by the Computational Medicine Group | BIH @ Charité
@@ -40,13 +40,20 @@ def helpMessage() {
 
 // MODULES --------------------------------------------------------------------
 
-include { WORKFLOW } from './workflows/workflow.nf'
+include { DOWNLOAD_AND_PROCESS } from './workflows/download_and_process.nf'
 
 // WORKFLOW -------------------------------------------------------------------
 
 workflow {
+
+  // Define input variables if necessary
+  def genome_build_ch = Channel.of(params.input).flatten()
+  def output_chroms_ch = Channel.of(params.chromosomes ).flatten()
   
-  WORKFLOW ()
+  DOWNLOAD_AND_PROCESS (
+    genome_build_ch,
+    output_chroms_ch
+  )
 
 }
 
