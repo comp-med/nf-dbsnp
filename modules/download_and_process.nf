@@ -15,9 +15,9 @@ process DOWNLOAD_ASSEMBLY_REPORT {
   GENOME_BUILD="$genome_build"
   NCBI_FTP="https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/405"
 
-  if [[ "\$GENOME_BUILD" == "grch37p13" ]]; then
+  if [[ "\$GENOME_BUILD" == "grch37_p13" ]]; then
     LINK="\${NCBI_FTP}/GCF_000001405.25_GRCh37.p13/GCF_000001405.25_GRCh37.p13_assembly_report.txt"
-  elif [[ "\$GENOME_BUILD" == "grch38p14" ]]; then 
+  elif [[ "\$GENOME_BUILD" == "grch38_p14" ]]; then 
     LINK="\${NCBI_FTP}/GCF_000001405.40_GRCh38.p14/GCF_000001405.40_GRCh38.p14_assembly_report.txt"
   fi
   wget \$LINK
@@ -26,9 +26,9 @@ process DOWNLOAD_ASSEMBLY_REPORT {
   stub:
   """
   GENOME_BUILD="$genome_build"
-  if [[ "\$GENOME_BUILD" == "grch37p13" ]]; then
+  if [[ "\$GENOME_BUILD" == "grch37_p13" ]]; then
     touch GCF_000001405.25_GRCh37.p13_assembly_report.txt
-  elif [[ "\$GENOME_BUILD" == "grch38p14" ]]; then 
+  elif [[ "\$GENOME_BUILD" == "grch38_p14" ]]; then 
     touch GCF_000001405.40_GRCh38.p14_assembly_report.txt
   fi
   """
@@ -52,11 +52,11 @@ process DOWNLOAD_DBSNP {
   GENOME_BUILD="$genome_build"
   NCBI_FTP="https://ftp.ncbi.nih.gov/snp/latest_release/VCF/"
 
-  if [[ "\$GENOME_BUILD" == "grch37p13" ]]; then
+  if [[ "\$GENOME_BUILD" == "grch37_p13" ]]; then
 
     LINK="\${NCBI_FTP}/GCF_000001405.25.gz"
 
-  elif [[ "\$GENOME_BUILD" == "grch38p14" ]]; then 
+  elif [[ "\$GENOME_BUILD" == "grch38_p14" ]]; then 
 
     LINK="\${NCBI_FTP}/GCF_000001405.40.gz"
 
@@ -67,11 +67,11 @@ process DOWNLOAD_DBSNP {
   stub:
   """
   GENOME_BUILD="$genome_build"
-  if [[ "\$GENOME_BUILD" == "grch37p13" ]]; then
+  if [[ "\$GENOME_BUILD" == "grch37_p13" ]]; then
 
     touch GCF_000001405.25.gz 
 
-  elif [[ "\$GENOME_BUILD" == "grch38p14" ]]; then 
+  elif [[ "\$GENOME_BUILD" == "grch38_p14" ]]; then 
 
     touch GCF_000001405.40.gz
 
@@ -195,24 +195,31 @@ process CREATE_TSV {
 process PARTITION_DBSNP {
   // Split up the TSV into per-chromosome chunks and save as parquet
 
-  tag "create_chunks: $genome_build"
+  tag "create_chunks: $genome_build, chr: $chromosome"
   label 'r_process'
-  publish // TODO
+  
+  publishDir (
+    path: { "${params.outDir}/${genome_build}/" },
+    mode: 'copy',
+    pattern: 'dbsnp_chr.parquet',
+    saveAs: { _filename ->
+        "dbsnp_${genome_build}_${chromosome}.parquet"
+    }
+)
 
   input:
-  tuple val(genome_build), path(dbsnp), val(chromosome)
+  tuple val(genome_build), path(dbsnp), val(chromosome), path(r_lib)
 
   output:
-  tuple val(genome_build), val(chromosome), path("dbsnp.parquet")
+  tuple val(genome_build), val(chromosome), path("dbsnp_chr.parquet")
 
   script:
   """
-  #! /usr/bin/env Rscript
-
+  partition_dbsnp.R $dbsnp $chromosome $r_lib
   """
 
   stub:
   """
-  touch dbsnp.parquet
+  touch dbsnp_chr.parquet
   """
 }
