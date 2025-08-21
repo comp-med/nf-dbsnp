@@ -46,13 +46,16 @@ include { DOWNLOAD_AND_PROCESS } from './workflows/download_and_process.nf'
 
 workflow {
 
-  // Define input variables if necessary
+  // Define input 
   def genome_build_ch = Channel.of(params.input).flatten()
   def output_chroms_ch = Channel.of(params.chromosomes ).flatten()
+  def r_lib_ch = Channel.of(params.r_lib)
   
+  // Run main workflow
   DOWNLOAD_AND_PROCESS (
     genome_build_ch,
-    output_chroms_ch
+    output_chroms_ch,
+    r_lib_ch
   )
 
 }
