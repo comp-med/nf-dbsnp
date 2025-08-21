@@ -80,7 +80,6 @@ process DOWNLOAD_DBSNP_INDEX {
 
 }
 
-
 process DOWNLOAD_DBSNP {
   // TODO: compare checksum to make sure download was complete
   
@@ -134,10 +133,10 @@ process CHROM_MAP {
   conda 'conda_envs/bash_utils.yml'
 
   input:
-  tuple val(genome_build), path(raw_dbsnp), path(assembly_report)
+  tuple val(genome_build), path(assembly_report)
   
   output: 
-  tuple val(genome_build), path(raw_dbsnp), path("full_chromosome_map.tsv")
+  tuple val(genome_build), path("full_chromosome_map.tsv")
 
   script:
   """
@@ -160,7 +159,7 @@ process RENAME_CHROMS {
   conda 'conda_envs/bcftools.yml'
 
   input:
-  tuple val(genome_build), path(raw_dbsnp), path(chromosome_map), path(raw_dbsnp_tbi)
+  tuple val(genome_build), path(raw_dbsnp), path(raw_dbsnp_tbi), path(chromosome_map)
   
   output: 
   tuple val(genome_build), path("dbsnp.vcf.gz")

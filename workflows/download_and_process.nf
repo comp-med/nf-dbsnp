@@ -21,9 +21,11 @@ workflow DOWNLOAD_AND_PROCESS {
     def assembly_report_ch = DOWNLOAD_ASSEMBLY_REPORT(genome_build_ch)
     def raw_dbsnp_ch       = DOWNLOAD_DBSNP(genome_build_ch)
     def raw_dbsnp_tbi_ch   = DOWNLOAD_DBSNP_INDEX(genome_build_ch)
-    def dbsnp_ch           = raw_dbsnp_ch.join(assembly_report_ch)
-    dbsnp_ch               = CHROM_MAP(dbsnp_ch)
-    dbsnp_ch               = RENAME_CHROMS(dbsnp_ch.join(raw_dbsnp_tbi_ch))
+    def chrom_map_ch       = CHROM_MAP(assembly_report_ch)
+    def dbsnp_ch           = raw_dbsnp_ch
+        .join(raw_dbsnp_tbi_ch)
+        .join(chrom_map_ch)
+    dbsnp_ch               = RENAME_CHROMS(dbsnp_ch)
     dbsnp_ch               = FILTER_CHROMS(dbsnp_ch)
     dbsnp_ch               = CREATE_TSV(dbsnp_ch)
     PARTITION_DBSNP(
