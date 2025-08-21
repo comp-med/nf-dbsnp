@@ -35,6 +35,7 @@ process DOWNLOAD_ASSEMBLY_REPORT {
 }
 
 process DOWNLOAD_DBSNP_INDEX {
+  // Re-naming the chromosomes in the dbSNP VCF requires the index file
   
   tag "dbsnp_index: $genome_build"
   label 'bash_process'
