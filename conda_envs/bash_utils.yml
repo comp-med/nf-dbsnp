@@ -1,8 +1,7 @@
-name: bcftools
+name: bash_utils
 channels:
-  - nodefaults
   - conda-forge
-  - bioconda
+  - nodefaults
 dependencies:
+  - wget
   - awk
-  - bcftools

@@ -31,7 +31,11 @@ setting up the profile for your runtime environment (e.g. your local computer
 or HPC) and the start the pipeline.
 
 ```bash 
+# The basic command
 nextflow run main.nf 
+
+# Specify this in `nextflow.config` or as a parameter flag
+nextflow run main.nf --r_lib </PATH/TO/YOUR/R/LIBRARY>
 
 # Select a profile if necessary
 nextflow run main.nf -profile cluster
