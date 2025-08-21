@@ -162,7 +162,7 @@ process RENAME_CHROMS {
   tuple val(genome_build), path(raw_dbsnp), path(raw_dbsnp_tbi), path(chromosome_map)
   
   output: 
-  tuple val(genome_build), path("dbsnp.vcf.gz")
+  tuple val(genome_build), path("dbsnp.vcf.gz"), path("dbsnp.vcf.gz.tbi")
 
   script:
   """
@@ -170,12 +170,12 @@ process RENAME_CHROMS {
   MAP="$chromosome_map"
   IN="$raw_dbsnp"
   OUT="dbsnp.vcf.gz"
-  bcftools annotate --rename-chrs \$MAP -Oz -o \$OUT \$IN
+  bcftools annotate --rename-chrs \$MAP --write-index -Oz -o \$OUT \$IN
   """
   
   stub:
   """
-  touch dbsnp.vcf.gz
+  touch dbsnp.vcf.gz dbsnp.vcf.gz.tbi
   """
 }
 
@@ -187,10 +187,10 @@ process FILTER_CHROMS {
   conda 'conda_envs/bcftools.yml'
 
   input:
-  tuple val(genome_build), path(dbsnp)
+  tuple val(genome_build), path(dbsnp), path(dbsnp_index)
   
   output: 
-  tuple val(genome_build), path("default_dbsnp.vcf.gz")
+  tuple val(genome_build), path("default_dbsnp.vcf.gz"), path("default_dbsnp.vcf.gz.tbi")
 
   script:
   // TODO: make this shorter, use `chr{1..2}`?
@@ -203,7 +203,7 @@ process FILTER_CHROMS {
   
   stub:
   """
-  touch default_dbsnp.vcf.gz
+  touch default_dbsnp.vcf.gz default_dbsnp.vcf.gz.tbi
   """
 }
 
@@ -215,7 +215,7 @@ process CREATE_TSV {
   conda 'conda_envs/bcftools.yml'
 
   input:
-  tuple val(genome_build), path(dbsnp)
+  tuple val(genome_build), path(dbsnp), path(dbsnp_index)
   
   output: 
   tuple val(genome_build), path("dbsnp.tsv.gz")
