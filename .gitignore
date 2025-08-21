@@ -1,0 +1,5 @@
+.nextflow/
+runInfo/
+work/
+.nextflow.log
+.nextflow.log*
