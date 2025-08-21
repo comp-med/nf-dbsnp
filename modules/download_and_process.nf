@@ -34,6 +34,52 @@ process DOWNLOAD_ASSEMBLY_REPORT {
   """
 }
 
+process DOWNLOAD_DBSNP_INDEX {
+  
+  tag "dbsnp_index: $genome_build"
+  label 'bash_process'
+  cache 'lenient'
+  conda 'conda_envs/bash_utils.yml'
+
+  input: val genome_build
+
+  output:
+  tuple val(genome_build), file("*.gz.tbi")
+
+  script:
+  """
+  GENOME_BUILD="$genome_build"
+  NCBI_FTP="https://ftp.ncbi.nih.gov/snp/latest_release/VCF/"
+
+  if [[ "\$GENOME_BUILD" == "grch37_p13" ]]; then
+
+    LINK="\${NCBI_FTP}/GCF_000001405.25.gz.tbi"
+
+  elif [[ "\$GENOME_BUILD" == "grch38_p14" ]]; then 
+
+    LINK="\${NCBI_FTP}/GCF_000001405.40.gz.tbi"
+
+  fi
+  wget \$LINK
+  """
+
+  stub:
+  """
+  GENOME_BUILD="$genome_build"
+  if [[ "\$GENOME_BUILD" == "grch37_p13" ]]; then
+
+    touch GCF_000001405.25.gz.tbi
+
+  elif [[ "\$GENOME_BUILD" == "grch38_p14" ]]; then 
+
+    touch GCF_000001405.40.gz.tbi
+
+  fi
+  """
+
+}
+
+
 process DOWNLOAD_DBSNP {
   // TODO: compare checksum to make sure download was complete
   
@@ -113,7 +159,7 @@ process RENAME_CHROMS {
   conda 'conda_envs/bcftools.yml'
 
   input:
-  tuple val(genome_build), path(raw_dbsnp), path(chromosome_map)
+  tuple val(genome_build), path(raw_dbsnp), path(chromosome_map), path(raw_dbsnp_tbi)
   
   output: 
   tuple val(genome_build), path("dbsnp.vcf.gz")
