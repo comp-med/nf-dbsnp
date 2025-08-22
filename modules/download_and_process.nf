@@ -1,4 +1,5 @@
 process DOWNLOAD_ASSEMBLY_REPORT {
+  // The report contains a table of all chromosomes in different naming styles
 
   tag "assembly_report: $genome_build"
   label 'bash_process'
@@ -127,6 +128,7 @@ process DOWNLOAD_DBSNP {
 }
 
 process CHROM_MAP {
+  // Create the mapping file for renaming chromosomes to UCSC style
 
   tag "chrom_map: $genome_build"
   label 'bash_process'
