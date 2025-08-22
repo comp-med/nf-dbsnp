@@ -26,12 +26,7 @@ workflow DOWNLOAD_AND_PROCESS {
         .join(raw_dbsnp_tbi_ch)
         .join(chrom_map_ch)
     dbsnp_ch               = RENAME_CHROMS(dbsnp_ch)
-    dbsnp_ch               = FILTER_CHROMS(dbsnp_ch)
+    dbsnp_ch               = FILTER_CHROMS(dbsnp_ch.combine(output_chroms_ch))
     dbsnp_ch               = CREATE_TSV(dbsnp_ch)
-    PARTITION_DBSNP(
-        dbsnp_ch
-            .combine(output_chroms_ch)
-            .combine(r_lib_ch)
-    )
-
+    PARTITION_DBSNP(dbsnp_ch.combine(r_lib_ch))
 }

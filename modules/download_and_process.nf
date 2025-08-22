@@ -182,23 +182,22 @@ process RENAME_CHROMS {
 process FILTER_CHROMS {
   // Only keep default chromosomes 1-22, X, Y
 
-  tag "filter_chroms: $genome_build"
+  tag "filter_chroms: $genome_build, chr: $chr"
   label 'bash_process'
   conda 'conda_envs/bcftools.yml'
 
   input:
-  tuple val(genome_build), path(dbsnp), path(dbsnp_index)
+  tuple val(genome_build), path(dbsnp), path(dbsnp_index), val(chr)
   
   output: 
-  tuple val(genome_build), path("default_dbsnp.vcf.gz"), path("default_dbsnp.vcf.gz.tbi")
+  tuple val(genome_build), val(chr), path("default_dbsnp.vcf.gz"), path("default_dbsnp.vcf.gz.tbi")
 
   script:
-  // TODO: make this shorter, use `chr{1..2}`?
   """
-  REGIONS='chr1,chr2,chr3,chr4,chr5,chr6,chr7,chr8,chr9,chr10,chr11,chr12,chr13,chr14,chr15,chr16,chr17,chr18,chr19,chr20,chr21,chr22,chrX,chrY'
+  REGION="$chr"
   IN="$dbsnp"
   OUT="default_dbsnp.vcf.gz"
-  bcftools view --regions \$REGIONS --write-index=tbi -Oz -o \$OUT \$IN
+  bcftools view --regions \$REGION --write-index=tbi -Oz -o \$OUT \$IN
   """
   
   stub:
@@ -210,15 +209,15 @@ process FILTER_CHROMS {
 process CREATE_TSV {
   // Create a gzipped TSV from the VCF file
 
-  tag "create_tsv: $genome_build"
+  tag "create_tsv: $genome_build, chr: $chr"
   label 'bash_process'
   conda 'conda_envs/bcftools.yml'
 
   input:
-  tuple val(genome_build), path(dbsnp), path(dbsnp_index)
+  tuple val(genome_build), val(chr), path(dbsnp), path(dbsnp_index)
   
   output: 
-  tuple val(genome_build), path("dbsnp.tsv.gz")
+  tuple val(genome_build), val(chr), path("dbsnp.tsv.gz")
   
   script:
   """
@@ -241,7 +240,7 @@ process CREATE_TSV {
 process PARTITION_DBSNP {
   // Split up the TSV into per-chromosome chunks and save as parquet
 
-  tag "create_chunks: $genome_build, chr: $chromosome"
+  tag "create_chunks: $genome_build, chr: $chr"
   label 'r_process'
   
   publishDir (
@@ -249,19 +248,19 @@ process PARTITION_DBSNP {
     mode: 'copy',
     pattern: 'dbsnp_chr.parquet',
     saveAs: { _filename ->
-        "dbsnp_${genome_build}_${chromosome}.parquet"
+        "dbsnp_${genome_build}_${chr}.parquet"
     }
 )
 
   input:
-  tuple val(genome_build), path(dbsnp), val(chromosome), path(r_lib)
+  tuple val(genome_build), val(chr), path(dbsnp), path(r_lib)
 
   output:
-  tuple val(genome_build), val(chromosome), path("dbsnp_chr.parquet")
+  path "dbsnp_chr.parquet"
 
   script:
   """
-  partition_dbsnp.R $dbsnp $chromosome $r_lib
+  partition_dbsnp.R $dbsnp $chr $r_lib
   """
 
   stub:
