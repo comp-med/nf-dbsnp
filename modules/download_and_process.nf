@@ -170,7 +170,7 @@ process RENAME_CHROMS {
   MAP="$chromosome_map"
   IN="$raw_dbsnp"
   OUT="dbsnp.vcf.gz"
-  bcftools annotate --rename-chrs \$MAP --write-index -Oz -o \$OUT \$IN
+  bcftools annotate --rename-chrs \$MAP --write-index=tbi -Oz -o \$OUT \$IN
   """
   
   stub:
@@ -198,7 +198,7 @@ process FILTER_CHROMS {
   REGIONS='chr1,chr2,chr3,chr4,chr5,chr6,chr7,chr8,chr9,chr10,chr11,chr12,chr13,chr14,chr15,chr16,chr17,chr18,chr19,chr20,chr21,chr22,chrX,chrY'
   IN="$dbsnp"
   OUT="default_dbsnp.vcf.gz"
-  bcftools view --regions \$REGIONS --write-index -Oz -o \$OUT \$IN
+  bcftools view --regions \$REGIONS --write-index=tbi -Oz -o \$OUT \$IN
   """
   
   stub:
