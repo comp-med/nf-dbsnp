@@ -1,12 +1,20 @@
 # nf-dbSNP
 
 A nextflow pipeline to download the latest realease of
-[dbSNP](https://www.ncbi.nlm.nih.gov/snp/docs/about/) for humans.
+[dbSNP](https://www.ncbi.nlm.nih.gov/snp/docs/about/).
+
+![image](images/dag.svg)
 
 ## Introduction
 
 The database `dbSNP` contains information on registered genetic polymorphisms
-for the whole (human) genome.
+for the whole genome and can be downloaded alligned to the human genome
+assemblies GRCh37p13 and GRCh38p14. This can be useful to check positions of
+SNPs across assemblies, since methods like LiftOver appear to not be
+recommended for SNVs (see
+[here](https://genome.ucsc.edu/FAQ/FAQreleases.html#snpConversion). However,
+some point out that converting SNP locations using dbSNP is also not
+recommended (see [here](https://www.biostars.org/p/9601421/#9601431).
 
 ## Requirements
 
