@@ -230,7 +230,6 @@ process CREATE_TSV {
     -f '%CHROM\t%POS\t%ID\t%REF\t%ALT\n' \
     -o \$OUT
   bgzip \$OUT
-  rm \$OUT
   """
 
   stub:
