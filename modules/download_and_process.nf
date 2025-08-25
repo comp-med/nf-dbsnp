@@ -224,7 +224,7 @@ process CREATE_TSV {
   script:
   """
   IN="$dbsnp"
-  OUT="dbsnp.tsv.gz"
+  OUT="dbsnp.tsv"
   bcftools norm -m- --no-version -Ou \$IN | \
   bcftools query \
     -f '%CHROM\t%POS\t%ID\t%REF\t%ALT\n' \
