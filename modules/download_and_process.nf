@@ -238,8 +238,8 @@ process CREATE_TSV {
   """
 }
 
-process PARTITION_DBSNP {
-  // Split up the TSV into per-chromosome chunks and save as parquet
+process CREATE_PARQUET {
+  // Add some descriptive column names and save as parquet file
 
   tag "create_chunks: $genome_build, chr: $chr"
   label 'r_process'
@@ -251,7 +251,7 @@ process PARTITION_DBSNP {
     saveAs: { _filename ->
         "dbsnp_${genome_build}_${chr}.parquet"
     }
-)
+  )
 
   input:
   tuple val(genome_build), val(chr), path(dbsnp), path(r_lib)

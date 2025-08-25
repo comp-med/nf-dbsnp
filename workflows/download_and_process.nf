@@ -6,7 +6,7 @@ include {
    RENAME_CHROMS;
    FILTER_CHROMS;
    CREATE_TSV;
-   PARTITION_DBSNP;
+   CREATE_PARQUET;
 
 } from '../modules/download_and_process.nf'
 
@@ -28,5 +28,5 @@ workflow DOWNLOAD_AND_PROCESS {
     dbsnp_ch               = RENAME_CHROMS(dbsnp_ch)
     dbsnp_ch               = FILTER_CHROMS(dbsnp_ch.combine(output_chroms_ch))
     dbsnp_ch               = CREATE_TSV(dbsnp_ch)
-    PARTITION_DBSNP(dbsnp_ch.combine(r_lib_ch))
+    CREATE_PARQUET(dbsnp_ch.combine(r_lib_ch))
 }
