@@ -32,7 +32,7 @@ process {
   withLabel: 'r_process' {
     container     = "file://$params.rApptainerPath"
     cpus          = { 8 * task.attempt }
-    memory        = { 32.GB * task.attempt }
+    memory        = { 64.GB * task.attempt }
     time          = { 1.h * task.attempt }
     errorStrategy =  { task.exitStatus == 140 ? 'retry' : 'terminate' } // or 'ignore'
     maxRetries    = 3
