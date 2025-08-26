@@ -15,7 +15,6 @@ r_lib <- args[3]
 # LIBRARIES ----
 
 # load packages
-r_lib <- "$r_lib"
 suppressPackageStartupMessages(library("polars", lib.loc = r_lib))
 
 # MAIN ----
